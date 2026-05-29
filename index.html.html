@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<!-- IS Service Desk Wallboard · v0.6.0 · PID CL-9655-260515-M7QK · updated 2026-05-29 -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IT Service Desk Wallboard v2</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%230b0f1a'/><rect x='5' y='9' width='22' height='16' rx='2' fill='none' stroke='%23f8fafc' stroke-width='1.2'/><rect x='7' y='11' width='18' height='3.5' rx='1' fill='%2360a5fa'/><rect x='7' y='17.5' width='18' height='3.5' rx='1' fill='%2334d399'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* DARK theme — default */
+  :root, body.theme-dark {
+    --bg:           #0b0f1a;
+    --bg-elev-1:    #131825;
+    --bg-elev-2:    #1c2235;
+    --border:       #2f3853;
+    --border-soft:  #232a40;
+
+    --text:         #f8fafc;
+    --text-soft:    #d1d8e6;
+    --text-mute:    #94a3b8;
+
+    --shift-1st:        #60a5fa;
+    --shift-1st-soft:   rgba(96, 165, 250, 0.14);
+    --shift-1st-edge:   rgba(96, 165, 250, 0.40);
+    --shift-2nd:        #34d399;
+    --shift-2nd-soft:   rgba(52, 211, 153, 0.14);
+    --shift-2nd-edge:   rgba(52, 211, 153, 0.40);
+
+    --badge-wfh:        #f59e0b;
+    --badge-pto:        #ef4444;
+    --badge-off:        #991b1b;
+    --badge-zoom:       #a855f7;
+    --badge-fw:         #14b8a6;
+    --badge-bru:        #0ea5e9;
+    --badge-wb:         #64748b;
+    --badge-train:      #10b981;
+    --badge-tag:        #475569;
+
+    --state-next:       #60a5fa;
+    --state-progress:   #facc15;
+    --state-attended:   #34d399;
+    --state-missed:     #f87171;
+    --state-unalloc:    #fbbf24;
+
+    /* Theme-fixed colours that don't invert: e.g. NOW pill text */
+    --on-warning-text:  #0b0f1a;
+
+    --radius: 6px;
+    --radius-lg: 10px;
+
+    --font-display: 'Manrope', system-ui, -apple-system, sans-serif;
+    --font-mono:    'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  }
+
+  /* LIGHT theme overrides */
+  body.theme-light {
+    --bg:           #f5f7fa;
+    --bg-elev-1:    #ffffff;
+    --bg-elev-2:    #f1f5f9;
+    --border:       #cbd5e1;
+    --border-soft:  #e2e8f0;
+
+    --text:         #0f172a;
+    --text-soft:    #475569;
+    --text-mute:    #64748b;
+
+    --shift-1st:        #2563eb;
+    --shift-1st-soft:   rgba(37, 99, 235, 0.08);
+    --shift-1st-edge:   rgba(37, 99, 235, 0.30);
+    --shift-2nd:        #059669;
+    --shift-2nd-soft:   rgba(5, 150, 105, 0.08);
+    --shift-2nd-edge:   rgba(5, 150, 105, 0.30);
+
+    /* Badge fills stay saturated (white text reads on both themes) */
+    --badge-wfh:        #d97706;
+    --badge-pto:        #dc2626;
+    --badge-off:        #991b1b;
+    --badge-zoom:       #9333ea;
+    --badge-fw:         #0d9488;
+    --badge-bru:        #0284c7;
+    --badge-wb:         #475569;
+    --badge-train:      #059669;
+    --badge-tag:        #94a3b8;
+
+    --state-next:       #2563eb;
+    --state-progress:   #d97706;
+    --state-attended:   #059669;
+    --state-missed:     #dc2626;
+    --state-unalloc:    #d97706;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font-display);
+    background: var(--bg);
+    color: var(--text);
+    font-weight: 500;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  #app {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 16px 20px 14px;
+    gap: 12px;
+  }
+
+  /* HEADER */
+  .header {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-soft);
+    flex-shrink: 0;
+  }
+  .header-left { display: flex; flex-direction: column; gap: 2px; }
+  .date-display {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(16px, 1.6vw, 22px);
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+  .date-display .day-name { color: var(--shift-1st); }
+  .meta-line {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-mute);
+    letter-spacing: 0.04em;
+  }
+  .meta-line .live-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--state-attended);
+    margin-right: 6px;
+    vertical-align: 1px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+  .clock {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: clamp(28px, 3.2vw, 48px);
+    letter-spacing: 0.02em;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .clock .seconds { color: var(--text-mute); }
+  .header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  .header-right-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .stat-line {
+    font-family: var(--font-display);
+    font-size: 14px;
+    color: var(--text-soft);
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .stat-line .stat-label {
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text);
+    font-size: 13px;
+  }
+  .stat-line .stat-sep {
+    color: var(--text-mute);
+    font-weight: 400;
+  }
+  .stat-line .stat-num {
+    color: var(--text);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-line .stat-suffix {
+    color: var(--text-soft);
+    font-weight: 500;
+  }
+
+  /* Theme toggle button */
+  .theme-toggle {
+    background: var(--bg-elev-2);
+    border: 1px solid var(--border-soft);
+    color: var(--text-soft);
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+  }
+  .theme-toggle:hover { color: var(--text); border-color: var(--text-mute); }
+  .theme-toggle svg { width: 16px; height: 16px; }
+
+  /* TABS */
+  .tabs {
+    display: none;
+    gap: 4px;
+    padding: 4px;
+    background: var(--bg-elev-1);
+    border-radius: var(--radius);
+    border: 1px solid var(--border-soft);
+    flex-shrink: 0;
+  }
+  .tabs button {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-soft);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 14px;
+    padding: 10px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: background 0.15s, color 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .tabs button:hover { color: var(--text); }
+  .tabs button.active { background: var(--bg-elev-2); color: var(--text); }
+  .tabs button svg { width: 16px; height: 16px; stroke-width: 2; }
+  body[data-mode="tabbed"] .tabs { display: flex; }
+
+  /* BOARDS */
+  .board {
+    flex: 1;
+    min-height: 0;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .board.active { display: flex; }
+
+  /* ================================================================
+     STATUS BOARD — two-column block layout
+     ================================================================ */
+  #status-grid {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+  }
+  .status-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    flex: 1;
+    min-height: 0;
+  }
+  .status-block {
+    background: var(--bg-elev-1);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .status-block.shift-1st { border-top: 3px solid var(--shift-1st); }
+  .status-block.shift-2nd { border-top: 3px solid var(--shift-2nd); }
+  .status-block.shift-float {
+    position: relative;
+    overflow: hidden;
+  }
+  .status-block.shift-float::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--shift-1st), var(--shift-2nd));
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+  .status-block.shift-off { border-top: 3px solid var(--text-mute); }
+
+  .block-header {
+    padding: 10px 16px;
+    background: var(--bg-elev-2);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-mute);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .block-header .label { color: var(--text); font-weight: 600; }
+  .status-block.shift-1st  .block-header .label { color: var(--shift-1st); }
+  .status-block.shift-2nd  .block-header .label { color: var(--shift-2nd); }
+
+  /* Shift pill in block header — filled style matching badges */
+  .block-header .shift-pill {
+    padding: 5px 13px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: white;
+    line-height: 1;
+  }
+  .status-block.shift-1st   .shift-pill { background: #2563eb; }
+  .status-block.shift-2nd   .shift-pill { background: #059669; }
+  .status-block.shift-float .shift-pill { background: linear-gradient(90deg, #2563eb, #059669); }
+  .status-block.shift-off   .shift-pill { background: var(--badge-tag); color: #e2e8f0; }
+
+  .block-header .count {
+    margin-left: auto;
+    color: var(--text);
+    background: var(--bg);
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    border: 1px solid var(--border-soft);
+  }
+  .status-block.shift-1st .block-header { background: linear-gradient(90deg, var(--shift-1st-soft), var(--bg-elev-2) 60%); }
+  .status-block.shift-2nd .block-header { background: linear-gradient(90deg, var(--shift-2nd-soft), var(--bg-elev-2) 60%); }
+
+  .block-rows {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .status-row {
+    display: grid;
+    grid-template-columns: minmax(120px, auto) 1fr;
+    gap: 14px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border-soft);
+    align-items: center;
+    flex: 1;
+    min-height: 0;
+  }
+  .status-row:last-child { border-bottom: none; }
+  .status-row .name {
+    font-weight: 700;
+    font-size: 27px;
+    color: var(--text);
+    letter-spacing: -0.005em;
+  }
+  .status-block.shift-off .status-row .name { font-weight: 500; color: var(--text-soft); }
+  .status-row .notes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .status-row .notes .none {
+    color: var(--text-mute);
+    font-size: 13px;
+  }
+
+  .block-empty {
+    padding: 18px;
+    text-align: center;
+    color: var(--text-mute);
+    font-size: 13px;
+    font-style: italic;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* BADGES */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px 5px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: white;
+    white-space: nowrap;
+    line-height: 1;
+  }
+  .badge svg { width: 14px; height: 14px; stroke-width: 2.25; }
+  .badge.b-wfh   { background: var(--badge-wfh); }
+  .badge.b-pto   { background: var(--badge-pto); }
+  .badge.b-off   { background: var(--badge-off); }
+  .badge.b-zoom  { background: var(--badge-zoom); }
+  .badge.b-fw    { background: var(--badge-fw); }
+  .badge.b-bru   { background: var(--badge-bru); }
+  .badge.b-wb    { background: var(--badge-wb); }
+  .badge.b-train { background: var(--badge-train); }
+  .badge.b-tag      { background: var(--badge-tag); color: #e2e8f0; }
+  .badge.b-float-1  { background: #2563eb; }
+  .badge.b-float-2  { background: #059669; }
+
+  /* MEETINGS BOARD */
+  #board-meetings .board-table {
+    flex: 1;
+    display: grid;
+    overflow: hidden;
+    background: var(--bg-elev-1);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-lg);
+    grid-template-columns: 150px minmax(180px, auto) minmax(120px, auto) minmax(160px, 1fr) minmax(200px, 2fr) 160px 68px;
+  }
+
+  /* MEETING STATE PILLS */
+  .state-pill-cell { display: flex; align-items: center; justify-content: center; }
+  .state-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    line-height: 1;
+    font-family: var(--font-mono);
+    border: 1.5px solid transparent;
+  }
+  .state-pill.sp-future   { color: var(--text-mute); border-color: transparent; }
+  .state-pill.sp-next     { background: #2563eb; color: #ffffff; border-color: #1d4ed8; }
+  .state-pill.sp-progress { background: #d97706; color: #ffffff; border-color: #b45309;
+                             animation: pill-glow 1.6s ease-in-out infinite; }
+  .state-pill.sp-attended { background: #059669; color: #ffffff; border-color: #047857; }
+  .state-pill.sp-missed   { background: #dc2626; color: #ffffff; border-color: #b91c1c; }
+  @keyframes pill-glow {
+    0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(217,119,6,0.5); }
+    50%      { opacity: 0.90; box-shadow: 0 0 0 8px rgba(217,119,6,0); }
+  }
+  .meeting-head, .meeting-row { display: contents; }
+  .meeting-head > div {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-mute);
+    padding: 12px 14px;
+    background: var(--bg-elev-2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+  }
+  .meeting-row > div {
+    padding: 14px;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    min-height: 0;
+  }
+  .meeting-row:last-of-type > div { border-bottom: none; }
+
+  .meeting-row .time-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+  .meeting-row .time-start {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  .meeting-row .time-sep {
+    font-family: var(--font-mono);
+    font-size: 17px;
+    color: var(--text-mute);
+    font-weight: 400;
+  }
+  .meeting-row .time-end {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 16px;
+    color: var(--text-soft);
+    font-variant-numeric: tabular-nums;
+  }
+  .meeting-row .room {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg-elev-2);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    display: inline-block;
+    width: fit-content;
+  }
+  /* Floor 8 = Client meeting floor — IT must attend */
+  .meeting-row .room.room-client {
+    background: #c2410c;
+    color: #ffffff;
+    border-color: #9a3412;
+    font-weight: 700;
+  }
+  .meeting-row .room.room-client::before {
+    content: '★ ';
+    font-size: 0.8em;
+    opacity: 0.9;
+  }
+  .meeting-row .host { font-weight: 700; color: var(--text); font-size: 17px; }
+  .meeting-row .host-title { display: flex; flex-direction: column; gap: 4px; }
+  .meeting-row .host-title .title { font-weight: 400; color: var(--text-soft); font-size: 14px; line-height: 1.3; }
+  .meeting-row .req-zoom { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .meeting-row .req-zoom .req { font-weight: 600; color: var(--text-soft); font-size: 15px; }
+  .meeting-row .req-zoom .zoom { font-family: var(--font-mono); color: var(--text-mute); font-size: 13px; line-height: 1.4; }
+
+  .meeting-row .alloc { font-weight: 600; color: var(--text); font-size: 16px; }
+  .meeting-row .alloc.unallocated {
+    color: var(--state-unalloc);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: rgba(245, 158, 11, 0.10);
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px dashed rgba(245, 158, 11, 0.5);
+    font-weight: 700;
+  }
+
+  .meeting-row .check { justify-content: center; }
+  .meeting-row .check .checkbox {
+    width: 28px; height: 28px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: var(--bg-elev-2);
+    transition: all 0.15s;
+  }
+  .meeting-row .check .checkbox:hover { border-color: var(--text-soft); }
+  .meeting-row .check .checkbox.checked {
+    background: var(--state-attended);
+    border-color: var(--state-attended);
+  }
+  .meeting-row .check .checkbox.checked svg { width: 16px; height: 16px; color: white; stroke-width: 3.5; }
+  .meeting-row .check .checkbox:not(.checked) svg { display: none; }
+
+  .meeting-row.next > div {
+    background: rgba(96, 165, 250, 0.10);
+  }
+  .meeting-row.next > div:first-child { border-left: 4px solid var(--state-next); }
+
+  .meeting-row.in-progress > div {
+    background: rgba(250, 204, 21, 0.10);
+  }
+  .meeting-row.in-progress > div:first-child { border-left: 4px solid var(--state-progress); }
+
+  .meeting-row.attended > div { opacity: 0.60; background: rgba(52, 211, 153, 0.05); }
+  .meeting-row.attended > div:first-child { border-left: 4px solid var(--state-attended); }
+
+  .meeting-row.missed > div { background: rgba(248, 113, 113, 0.10); }
+  .meeting-row.missed > div:first-child { border-left: 4px solid var(--state-missed); }
+
+  .empty {
+    grid-column: 1 / -1;
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--text-mute);
+    font-size: 14px;
+  }
+
+  /* WALL VIEW */
+  @media (min-width: 1600px) {
+    body[data-mode="wall"] #app { padding: 24px 32px 22px; gap: 20px; }
+    body[data-mode="wall"] .date-display { font-size: 28px; }
+    body[data-mode="wall"] .clock { font-size: 56px; }
+    body[data-mode="wall"] .meta-line { font-size: 13px; }
+    body[data-mode="wall"] .stat-line { font-size: 17px; }
+    body[data-mode="wall"] .stat-line .stat-label { font-size: 16px; }
+    body[data-mode="wall"] .theme-toggle { width: 38px; height: 38px; }
+    body[data-mode="wall"] .theme-toggle svg { width: 18px; height: 18px; }
+
+    body[data-mode="wall"] .block-header { padding: 14px 22px; font-size: 13px; }
+    body[data-mode="wall"] .block-header .count { font-size: 13px; padding: 3px 12px; }
+    body[data-mode="wall"] .block-header .shift-pill { font-size: 14px; padding: 7px 16px; }
+    body[data-mode="wall"] .status-row { padding: 18px 26px; }
+    body[data-mode="wall"] .status-row .name { font-size: 39px; }
+    body[data-mode="wall"] .badge { font-size: 16px; padding: 7px 14px 7px 11px; }
+    body[data-mode="wall"] .badge svg { width: 18px; height: 18px; }
+
+    body[data-mode="wall"] .state-pill { font-size: 18px; padding: 13px 24px; }
+    body[data-mode="wall"] .meeting-head > div { font-size: 13px; padding: 16px 22px; }
+    body[data-mode="wall"] .meeting-row > div { padding: 20px 20px; }
+    body[data-mode="wall"] .meeting-row .time-start { font-size: 32px; }
+    body[data-mode="wall"] .meeting-row .time-end { font-size: 22px; }
+    body[data-mode="wall"] .meeting-row .time-sep { font-size: 26px; }
+    body[data-mode="wall"] .meeting-row .room { font-size: 26px; padding: 8px 14px; }
+    body[data-mode="wall"] .meeting-row .host { font-size: 28px; }
+    body[data-mode="wall"] .meeting-row .host-title .title { font-size: 18px; }
+    body[data-mode="wall"] .meeting-row .req-zoom .req { font-size: 22px; }
+    body[data-mode="wall"] .meeting-row .req-zoom .zoom { font-size: 18px; }
+    body[data-mode="wall"] .meeting-row .alloc { font-size: 22px; }
+    body[data-mode="wall"] .meeting-row .alloc.unallocated { font-size: 16px; }
+    body[data-mode="wall"] .meeting-row .check .checkbox { width: 40px; height: 40px; }
+    body[data-mode="wall"] .meeting-row .check .checkbox.checked svg { width: 24px; height: 24px; }
+
+    body[data-mode="wall"] #board-meetings .board-table { grid-auto-rows: minmax(0, 1fr); }
+  }
+
+  /* MOBILE */
+  @media (max-width: 767px) {
+    body { overflow: auto; }
+
+    /* Header: single compact bar */
+    #app { height: auto; min-height: 100vh; padding: 10px 12px 20px; gap: 8px; overflow: visible; }
+    .header {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 10px;
+      gap: 8px;
+    }
+    /* Hide clock and last-updated meta on mobile — phone has its own clock */
+    .clock     { display: none; }
+    .meta-line { display: none; }
+    /* Date: left side, compact */
+    .header-left  { gap: 0; flex-shrink: 0; }
+    .date-display { font-size: 14px; font-weight: 700; }
+    /* Right side: stat counts + theme toggle */
+    .header-right {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .header-right-top { display: flex; align-items: center; gap: 8px; }
+    .stat-line {
+      font-size: 11px;
+      gap: 4px;
+      flex-wrap: nowrap;
+      color: var(--text-mute);
+    }
+    .stat-line .stat-label { display: none; } /* "MEETINGS" label hidden on mobile */
+    .stat-line .stat-sep   { display: none; } /* pipe separators hidden */
+    .theme-toggle { width: 26px; height: 26px; flex-shrink: 0; }
+
+    /* Boards */
+    .board { overflow: visible; }
+
+    /* Status board — reduced fonts, clear bottom space */
+    #status-grid { gap: 8px; overflow: visible; padding-bottom: 24px; }
+    .status-pair { grid-template-columns: 1fr; gap: 8px; flex: none; }
+    .status-block { min-height: auto; }
+    .status-block .block-header { padding: 8px 14px; }
+    .status-block .block-header .label { font-size: 11px; }
+    .status-block .block-header .count { font-size: 11px; }
+    .status-row { padding: 8px 14px; flex: none; }
+    .status-row .name { font-size: 16px; }
+    .badge { font-size: 10px; padding: 3px 7px 3px 6px; }
+    .badge svg { width: 11px; height: 11px; }
+
+    /* Meetings: card list */
+    #board-meetings .board-table {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 0;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+    }
+    .meeting-head { display: none; }
+
+    /* Card: vertical flex stack */
+    .meeting-row {
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      background: var(--bg-elev-1);
+      border-radius: 10px;
+      border: 1px solid var(--border-soft);
+      overflow: hidden;
+      position: relative;
+    }
+    .meeting-row > div { padding: 0; border: none; background: transparent !important; }
+    .meeting-row.attended { opacity: 0.72; }
+
+    /* ── 1. Top strip: pill left, checkbox pinned right ── */
+    .meeting-row .state-pill-cell {
+      order: 1;
+      padding: 10px 44px 0 12px; /* right pad clears the checkbox */
+      display: flex;
+      align-items: center;
+    }
+    .meeting-row .state-pill { font-size: 11px; padding: 4px 10px; }
+    .meeting-row .check {
+      position: absolute;
+      top: 8px; right: 10px;
+      display: flex; align-items: center;
+      z-index: 2; cursor: pointer;
+    }
+    .meeting-row .check .checkbox { width: 26px; height: 26px; }
+    .meeting-row .check .checkbox.checked svg { width: 14px; height: 14px; }
+
+    /* ── 2. WHEN — time, large ── */
+    .meeting-row .time-cell {
+      order: 2;
+      padding: 6px 12px 0;
+      gap: 6px;
+      align-items: baseline;
+    }
+    .meeting-row .time-start { font-size: 26px; font-weight: 800; }
+    .meeting-row .time-end   { font-size: 16px; color: var(--text-soft); }
+    .meeting-row .time-sep   { font-size: 18px; color: var(--text-mute); }
+
+    /* ── 3. WHERE — room chip ── */
+    .meeting-row .room-cell {
+      order: 3;
+      padding: 6px 12px 0;
+    }
+    .meeting-row .room {
+      font-size: 14px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      width: fit-content;
+      font-weight: 700;
+    }
+    .meeting-row .room.room-client {
+      font-size: 15px;
+      padding: 5px 12px;
+    }
+
+    /* ── 4. WHO — host name only, title hidden on mobile ── */
+    .meeting-row .host-cell {
+      order: 4;
+      padding: 8px 12px 0;
+    }
+    .meeting-row .host { font-size: 18px; font-weight: 700; }
+    .meeting-row .host-title .title { display: none; } /* seen on wall, not needed on mobile */
+
+    /* ── 5. Zoom info ── */
+    .meeting-row .req-zoom {
+      order: 5;
+      padding: 6px 12px 0;
+      gap: 3px;
+    }
+    .meeting-row .req-zoom .req  { font-size: 13px; color: var(--text-soft); font-weight: 600; }
+    .meeting-row .req-zoom .zoom { font-size: 11px; color: var(--text-mute); line-height: 1.6; font-family: var(--font-mono); }
+
+    /* ── 6. Footer — allocated analyst ── */
+    .meeting-row .alloc-cell {
+      order: 6;
+      padding: 8px 12px 10px;
+      border-top: 1px solid var(--border-soft);
+      margin-top: 8px;
+    }
+    .meeting-row .alloc { font-size: 15px; font-weight: 700; color: var(--text); }
+    .meeting-row .alloc::before { content: none; }
+    .meeting-row .alloc.unallocated { font-size: 13px; font-weight: 500; font-style: italic; color: var(--text-mute); }
+
+    /* State border accents */
+    .meeting-row.next        { border-left: 4px solid var(--state-next); }
+    .meeting-row.in-progress { border-left: 4px solid var(--state-progress); }
+    .meeting-row.attended    { border-left: 4px solid var(--state-attended); }
+    .meeting-row.missed      { border-left: 4px solid var(--state-missed); }
+
+    /* Light mode: force near-black text so it reads on white card backgrounds */
+    body.theme-light .meeting-row .host       { color: #0f172a; }
+    body.theme-light .meeting-row .time-start { color: #0f172a; }
+    body.theme-light .meeting-row .time-end   { color: #334155; }
+    body.theme-light .meeting-row .time-sep   { color: #475569; }
+    body.theme-light .meeting-row .room       { color: #0f172a; }
+    body.theme-light .meeting-row .alloc      { color: #0f172a; }
+    body.theme-light .meeting-row .req-zoom .req  { color: #1e293b; }
+    body.theme-light .meeting-row .req-zoom .zoom { color: #475569; }
+
+    /* Done meetings: grey out all text regardless of theme */
+    .meeting-row.attended .host,
+    .meeting-row.attended .time-start,
+    .meeting-row.attended .time-end,
+    .meeting-row.attended .time-sep,
+    .meeting-row.attended .room,
+    .meeting-row.attended .alloc,
+    .meeting-row.attended .req-zoom .req,
+    .meeting-row.attended .req-zoom .zoom { color: var(--text-mute) !important; }
+  }
+
+  /* DESK */
+  @media (min-width: 768px) and (max-width: 1599px) {
+    .clock { font-size: 32px; }
+    .date-display { font-size: 17px; }
+  }
+</style>
+</head>
+<body class="theme-dark">
+
+<div id="app">
+  <header class="header">
+    <div class="header-left">
+      <div class="date-display" id="date-display">—</div>
+      <div class="meta-line">
+        <span class="live-dot"></span>
+        <span id="last-updated">Last updated: just now</span>
+        <span id="demo-flag" style="display:none; margin-left:10px; color:var(--state-progress);">· DEMO MODE</span>
+      </div>
+    </div>
+    <div class="clock" id="clock">—</div>
+    <div class="header-right">
+      <div class="header-right-top">
+        <div class="stat-line" id="stat-line">—</div>
+        <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme"></button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="meetings" class="active" id="tab-meetings">Meetings</button>
+    <button data-tab="status" id="tab-status">Status</button>
+  </nav>
+
+  <main class="board active" id="board-meetings">
+    <div class="board-table" id="meetings-grid"></div>
+  </main>
+  <main class="board" id="board-status">
+    <div id="status-grid"></div>
+  </main>
+</div>
+
+<script>
+const ICONS = {
+  'home':              '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
+  'palm-tree':         '<path d="M13 8c0-2.76-2.46-5-5.5-5S2 5.24 2 8h2l1-1 1 1h4"/><path d="M13 7.14A5.82 5.82 0 0 1 16.5 6c3.04 0 5.5 2.24 5.5 5h-3l-1-1-1 1h-3"/><path d="M5.89 9.71c-2.15 2.15-2.3 5.47-.35 7.43l4.24-4.25.7-.7.71-.71 2.12-2.12c-1.95-1.96-5.27-1.8-7.42.35z"/><path d="M11 15.5c.5 2.5-.17 4.5-1 6.5h4c2-5.5-.5-12-1-14"/>',
+  'user-minus':        '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="22" x2="16" y1="11" y2="11"/>',
+  'clapperboard':      '<path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  'headset':           '<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H4a1 1 0 0 1-1-1z"/><path d="M21 14h-3a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h2a1 1 0 0 0 1-1z"/><path d="M3 14a9 9 0 0 1 18 0"/>',
+  'train-front-tunnel':'<path d="M2 22V12a10 10 0 1 1 20 0v10"/><path d="M15 6.8v1.4a3 2.8 0 1 1-6 0V6.8"/><path d="M10 15h.01"/><path d="M14 15h.01"/><path d="m9 19-2 3"/><path d="m15 19 2 3"/><path d="M5 13a8 8 0 0 1 14 0v5a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/>',
+  'brush-cleaning':    '<path d="m16 22-1-4"/><path d="M19 13.99a1 1 0 0 0 1-1V12a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v6a3 3 0 0 0 3 3h2"/><path d="M5 18.001V13a2 2 0 1 1 4 0v6h6v-2a2 2 0 1 0-4 0v3.5a1.5 1.5 0 0 0 1.5 1.5h7.5"/><path d="m8 22 1-4"/>',
+  'presentation':      '<path d="M2 3h20"/><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"/><path d="m7 21 5-5 5 5"/>',
+  'tag':               '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>',
+  'check':             '<path d="M20 6 9 17l-5-5"/>',
+  'calendar-clock':    '<path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h5"/><circle cx="16" cy="16" r="6"/><path d="M16 14v2l1 1"/>',
+  'users':             '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  'arrow-left-right':  '<path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/>',
+  'sun':               '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+  'moon':              '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+};
+function svgIcon(name, size) {
+  const p = ICONS[name] || ICONS['tag'];
+  const s = size || 14;
+  return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+}
+
+const CONFIG = {
+  VERSION: '0.6.0',
+  USE_TEST_DATA: false,            // true = force embedded demo data regardless of URLs (safe fallback)
+  DEMO_TIME_OVERRIDE: '2026-06-01T11:30:00',
+  DATA_REFRESH_MS:  5 * 60 * 1000,
+  STATE_REFRESH_MS: 30 * 1000,
+  STATUS_CSV_URL:    'staff_status.csv',  // host this CSV alongside the HTML (same folder)
+  MEETINGS_CSV_URL:  'meetings.csv',       // host this CSV alongside the HTML (same folder)
+  WORK_DAY_END_HOUR: 20,
+};
+
+const STATUS_TYPES = [
+  { keys: ['wfh'],                          cls: 'b-wfh',     icon: 'home',               label: 'WFH' },
+  { keys: ['pto'],                          cls: 'b-pto',     icon: 'palm-tree',          label: 'PTO' },
+  { keys: ['off'],                          cls: 'b-off',     icon: 'user-minus',         label: 'OFF' },
+  { keys: ['zoom', 'zoom allocator', 'za'], cls: 'b-zoom',    icon: 'clapperboard',       label: 'Zoom Allocator' },
+  { keys: ['fw', 'floor walking'],          cls: 'b-fw',      icon: 'headset',            label: 'Floor Walking' },
+  { keys: ['bru', 'brussels'],              cls: 'b-bru',     icon: 'train-front-tunnel', label: 'Brussels' },
+  { keys: ['wb', 'workbench'],              cls: 'b-wb',      icon: 'brush-cleaning',     label: 'Workbench' },
+  { keys: ['training'],                     cls: 'b-train',   icon: 'presentation',       label: 'Training' },
+  { keys: ['float 1st', 'f1'],              cls: 'b-float-1', icon: 'arrow-left-right',   label: 'Float - 1st' },
+  { keys: ['float 2nd', 'f2'],              cls: 'b-float-2', icon: 'arrow-left-right',   label: 'Float - 2nd' },
+];
+function matchStatus(keyword) {
+  const k = keyword.trim().toLowerCase();
+  for (const s of STATUS_TYPES) if (s.keys.includes(k)) return s;
+  return { cls: 'b-tag', icon: 'tag', label: keyword.trim() };
+}
+
+const TODAY_ISO = (CONFIG.DEMO_TIME_OVERRIDE || new Date().toISOString()).slice(0, 10);
+
+/* Anonymised demo rota — invented names, structure mirrors a real day (POC: no real PII on cloud-hosted file) */
+const TEST_STATUS = [
+  { Date: TODAY_ISO, Name: 'Alex',   Shift: '1st',   Notes: '' },
+  { Date: TODAY_ISO, Name: 'Sam',    Shift: '1st',   Notes: '' },
+  { Date: TODAY_ISO, Name: 'Jordan', Shift: '1st',   Notes: '' },
+  { Date: TODAY_ISO, Name: 'Casey',  Shift: '2nd',   Notes: '' },
+  { Date: TODAY_ISO, Name: 'Riley',  Shift: '2nd',   Notes: '' },
+  { Date: TODAY_ISO, Name: 'Drew',   Shift: '2nd',   Notes: '' },
+  { Date: TODAY_ISO, Name: 'Robin',  Shift: '1st',   Notes: 'WFH, ZA' },
+  { Date: TODAY_ISO, Name: 'Pat',    Shift: '',      Notes: 'PTO' },
+  { Date: TODAY_ISO, Name: 'Jamie',  Shift: '',      Notes: 'OFF' },
+];
+
+const TEST_MEETINGS = [
+  { Start: '08:30', End: '09:30', Room: 'CR - 8.06', Host: 'Sarah Bennett', Title: 'Practice Group Session (Part 1)',
+    Requirements: 'Zoom Recording · Zoom Video', ZoomDetails: 'Zoom Meeting ID: 847 5743 8820  P/code: 632717',
+    AllocatedTo: 'Alex', Attended: true },
+  { Start: '10:00', End: '11:00', Room: 'CR - 8.05', Host: 'Michael Grant', Title: 'Marketing Team Review',
+    Requirements: 'Laptop - Guest', ZoomDetails: 'Marketing team — bringing own laptop, will need a screen',
+    AllocatedTo: 'Riley', Attended: false },
+  { Start: '11:00', End: '12:00', Room: 'CR - 8.04', Host: 'Emma Collins', Title: 'Q2 Partner Briefing',
+    Requirements: 'Zoom Video · Zoom Recording', ZoomDetails: 'Zoom Meeting ID: 921 4455 1102  P/code: 884271',
+    AllocatedTo: 'Drew', Attended: false },
+  { Start: '12:30', End: '13:30', Room: 'CR - 7.02', Host: 'David Marsh', Title: 'Lunch & Learn - AI Use Cases',
+    Requirements: 'Zoom Video · Catering AV', ZoomDetails: 'Zoom Meeting ID: 555 1234 5678  P/code: 191919',
+    AllocatedTo: 'Casey', Attended: false },
+  { Start: '14:00', End: '15:00', Room: 'CR - 8.06', Host: 'Olivia Hart', Title: 'Vendor Demo - Litigation Tools',
+    Requirements: 'Laptop - Guest · Zoom Recording', ZoomDetails: 'Zoom Meeting ID: 712 9988 4411  P/code: 472938',
+    AllocatedTo: 'Riley', Attended: false },
+  { Start: '16:00', End: '17:00', Room: 'CR - 8.05', Host: 'Daniel Webb', Title: 'Internal Comms - All-Hands Prep',
+    Requirements: 'Zoom Video', ZoomDetails: 'Zoom Meeting ID: 308 4521 9876  P/code: 552233',
+    AllocatedTo: '', Attended: false },
+];
+
+const state = { status: [], meetings: [], activeTab: 'meetings', mode: 'tabbed', fixedView: null, lastDataRefresh: null };
+
+function now() { return CONFIG.DEMO_TIME_OVERRIDE ? new Date(CONFIG.DEMO_TIME_OVERRIDE) : new Date(); }
+function timeToMinutes(hhmm) { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; }
+function nowMinutes() { const n = now(); return n.getHours() * 60 + n.getMinutes(); }
+function isAfterEndOfDay() { return now().getHours() >= CONFIG.WORK_DAY_END_HOUR; }
+
+function useEmbedded() {
+  state.status   = TEST_STATUS;
+  state.meetings = TEST_MEETINGS.map(m => ({ ...m }));
+  state.lastDataRefresh = now();
+  state.dataSource = 'embedded';
+}
+async function loadData() {
+  const haveUrls = CONFIG.STATUS_CSV_URL && CONFIG.MEETINGS_CSV_URL;
+  if (CONFIG.USE_TEST_DATA || !haveUrls) { useEmbedded(); applyAttendedOverrides(); return; }
+  try {
+    const [s, m] = await Promise.all([
+      fetch(CONFIG.STATUS_CSV_URL,   { cache: 'no-store' }),
+      fetch(CONFIG.MEETINGS_CSV_URL, { cache: 'no-store' }),
+    ]);
+    if (!s.ok || !m.ok) throw new Error('HTTP ' + s.status + ' / ' + m.status);
+    const status   = parseCSV(await s.text());
+    const meetings = parseCSV(await m.text()).map(normaliseMeeting);
+    if (!status.length && !meetings.length) throw new Error('both feeds empty');
+    state.status = status; state.meetings = meetings;
+    state.lastDataRefresh = new Date(); state.dataSource = 'csv';
+  } catch (err) {
+    console.warn('CSV load failed — using embedded fallback:', err);
+    useEmbedded();
+  }
+  applyAttendedOverrides();
+}
+
+function parseCSV(text) {
+  const sep = text.includes('\t') && !text.includes(',') ? '\t' : ',';
+  const lines = text.split(/\r?\n/).filter(l => l.length);
+  if (!lines.length) return [];
+  const headers = splitRow(lines[0], sep);
+  return lines.slice(1).map(line => {
+    const cells = splitRow(line, sep);
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = (cells[i] || '').trim());
+    return obj;
+  });
+}
+function splitRow(line, sep) {
+  const out = []; let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+    else if (c === '"') inQ = !inQ;
+    else if (c === sep && !inQ) { out.push(cur); cur = ''; }
+    else cur += c;
+  }
+  out.push(cur); return out;
+}
+
+/* ---- Attended handling: CSV gives strings; coerce + persist ticks per day ---- */
+function normaliseMeeting(m) {
+  return { ...m, Attended: /^(true|yes|y|1|x|✓)$/i.test(String(m.Attended || '').trim()) };
+}
+function attendedKey(m) { return (m.Start || '') + '__' + (m.Room || ''); }
+function loadAttendedMap() {
+  try { return JSON.parse(localStorage.getItem('WB_ATTENDED_' + TODAY_ISO) || '{}'); }
+  catch (e) { return {}; }   // sandboxed preview / storage disabled
+}
+function saveAttendedMap(map) {
+  try { localStorage.setItem('WB_ATTENDED_' + TODAY_ISO, JSON.stringify(map)); }
+  catch (e) { /* persistence unavailable — ticks live for this view only */ }
+}
+function persistAttended(m) {
+  const map = loadAttendedMap();
+  map[attendedKey(m)] = !!m.Attended;
+  saveAttendedMap(map);
+}
+function applyAttendedOverrides() {
+  const map = loadAttendedMap();
+  state.meetings.forEach(m => { const k = attendedKey(m); if (k in map) m.Attended = map[k]; });
+}
+
+/* ====================================================================
+   STATUS RENDER — two-column block layout
+   ==================================================================== */
+function renderStatus() {
+  const grid = document.getElementById('status-grid');
+  const todayRows = state.status.filter(r => !r.Date || r.Date === TODAY_ISO);
+
+  const groups = {
+    '1st':   todayRows.filter(r => r.Shift === '1st').sort((a,b) => a.Name.localeCompare(b.Name)),
+    '2nd':   todayRows.filter(r => r.Shift === '2nd').sort((a,b) => a.Name.localeCompare(b.Name)),
+    'Float': todayRows.filter(r => r.Shift === 'Float').sort((a,b) => a.Name.localeCompare(b.Name)),
+    'Off':   todayRows.filter(r => !r.Shift).sort((a,b) => a.Name.localeCompare(b.Name)),
+  };
+
+  function renderRow(r) {
+    const badges = (r.Notes || '').split(',').map(s => s.trim()).filter(Boolean).map(k => {
+      const t = matchStatus(k);
+      return `<span class="badge ${t.cls}">${svgIcon(t.icon)}${t.label}</span>`;
+    }).join('');
+    return `
+      <div class="status-row">
+        <div class="name">${escapeHTML(r.Name)}</div>
+        <div class="notes">${badges || '<span class="none">—</span>'}</div>
+      </div>`;
+  }
+
+  function renderBlock(pillLabel, label, rows, cls, alwaysShow) {
+    if (!rows.length && !alwaysShow) return '';
+    const emptyText = cls === 'shift-float' ? 'No analysts on Float today' : 'No analysts';
+    const body = rows.length
+      ? rows.map(renderRow).join('')
+      : `<div class="block-empty">${emptyText}</div>`;
+    const pill = pillLabel ? `<span class="shift-pill">${pillLabel}</span>` : '';
+    return `
+      <div class="status-block ${cls}">
+        <div class="block-header">
+          ${pill}
+          ${pill ? '' : `<span class="label">${label}</span>`}
+          <span class="count">${rows.length}</span>
+        </div>
+        <div class="block-rows">${body}</div>
+      </div>`;
+  }
+
+  let html = `
+    <div class="status-pair">
+      ${renderBlock('1st Line', '1st Line', groups['1st'],   'shift-1st',   true)}
+      ${renderBlock('2nd Line', '2nd Line', groups['2nd'],   'shift-2nd',   true)}
+    </div>
+    ${renderBlock('Float 1st / 2nd', 'Float', groups['Float'], 'shift-float', true)}
+    ${renderBlock('',                'Off',   groups['Off'],   'shift-off',   false)}
+  `;
+  grid.innerHTML = html;
+}
+
+/* MEETINGS RENDER — unchanged */
+function meetingState(m, nowMin) {
+  const sM = timeToMinutes(m.Start), eM = timeToMinutes(m.End);
+  if (nowMin >= eM) return m.Attended ? 'attended' : 'missed';
+  if (nowMin >= sM) return 'in-progress';
+  return 'future';
+}
+function findNextMeetingIndex(meetings, nowMin) {
+  let bi = -1, bs = Infinity;
+  meetings.forEach((m, i) => {
+    const sM = timeToMinutes(m.Start);
+    if (sM > nowMin && sM < bs) { bs = sM; bi = i; }
+  });
+  return bi;
+}
+function renderMeetings() {
+  const grid = document.getElementById('meetings-grid');
+  const nowMin = nowMinutes();
+  const meetings = [...state.meetings].sort((a, b) => timeToMinutes(a.Start) - timeToMinutes(b.Start));
+  const visible = isAfterEndOfDay() ? [] : meetings;
+  const nextIdx = findNextMeetingIndex(visible, nowMin);
+
+  let html = `
+    <div class="meeting-head">
+      <div>Status</div><div>Time</div><div>Room</div>
+      <div>Host / Title</div><div>Requirements</div><div>Allocated</div>
+      <div>${svgIcon('check', 12)}</div>
+    </div>`;
+  if (!visible.length) {
+    html += `<div class="empty">No meetings — service desk closes at ${CONFIG.WORK_DAY_END_HOUR}:00.</div>`;
+  }
+  visible.forEach((m, i) => {
+    const st = meetingState(m, nowMin);
+    const isNext = i === nextIdx;
+    let rowCls = '';
+    if (st === 'attended') rowCls = 'attended';
+    else if (st === 'missed') rowCls = 'missed';
+    else if (st === 'in-progress') rowCls = 'in-progress';
+    else if (isNext) rowCls = 'next';
+
+    // State pill
+    let pillCls, pillLabel;
+    if (st === 'in-progress')   { pillCls = 'sp-progress'; pillLabel = 'NOW'; }
+    else if (isNext)             { pillCls = 'sp-next';     pillLabel = 'NEXT'; }
+    else if (st === 'attended')  { pillCls = 'sp-attended'; pillLabel = 'DONE'; }
+    else if (st === 'missed')    { pillCls = 'sp-missed';   pillLabel = 'MISSED'; }
+    else                         { pillCls = 'sp-future';   pillLabel = ''; }
+
+    const allocCls = m.AllocatedTo ? 'alloc' : 'alloc unallocated';
+    const allocText = m.AllocatedTo || 'Unallocated';
+    const checkboxCls = m.Attended ? 'checkbox checked' : 'checkbox';
+    const roomDisplay = (m.Room || '').replace(/^CR\s*-\s*/i, '');
+    const isClientFloor = /^8\./.test(roomDisplay.trim());
+    const roomCls = isClientFloor ? 'room room-client' : 'room';
+
+    html += `
+      <div class="meeting-row ${rowCls}" data-meeting-idx="${i}">
+        <div class="state-pill-cell"><span class="state-pill ${pillCls}">${pillLabel}</span></div>
+        <div class="time-cell">
+          <span class="time-start">${m.Start}</span>
+          <span class="time-sep">–</span>
+          <span class="time-end">${m.End}</span>
+        </div>
+        <div class="room-cell"><span class="${roomCls}">${escapeHTML(roomDisplay)}</span></div>
+        <div class="host-cell"><div class="host-title">
+          <span class="host">${escapeHTML(m.Host)}</span>
+          <span class="title">${escapeHTML(m.Title || '')}</span>
+        </div></div>
+        <div class="req-zoom">
+          <span class="req">${escapeHTML(m.Requirements || '')}</span>
+          ${m.ZoomDetails ? `<span class="zoom">${escapeHTML(m.ZoomDetails)}</span>` : ''}
+        </div>
+        <div class="alloc-cell"><span class="${allocCls}">${escapeHTML(allocText)}</span></div>
+        <div class="check"><div class="${checkboxCls}" data-meeting-idx="${i}">${svgIcon('check', 16)}</div></div>
+      </div>`;
+  });
+  grid.innerHTML = html;
+
+  grid.querySelectorAll('.checkbox').forEach(cb => {
+    cb.addEventListener('click', () => {
+      const idx = parseInt(cb.dataset.meetingIdx, 10);
+      const sortedVisible = [...state.meetings].sort((a, b) => timeToMinutes(a.Start) - timeToMinutes(b.Start));
+      const target = sortedVisible[idx];
+      const orig = state.meetings.find(m => m.Start === target.Start && m.Room === target.Room);
+      if (orig) { orig.Attended = !orig.Attended; persistAttended(orig); renderMeetings(); }
+    });
+  });
+}
+
+function pad2(n) { return n.toString().padStart(2, '0'); }
+function renderHeader() {
+  const n = now();
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('date-display').innerHTML =
+    `<span class="day-name">${days[n.getDay()]}</span> · ${n.getDate()} ${months[n.getMonth()]} ${n.getFullYear()}`;
+  document.getElementById('clock').innerHTML =
+    `${pad2(n.getHours())}:${pad2(n.getMinutes())}<span class="seconds">:${pad2(n.getSeconds())}</span>`;
+
+  if (state.lastDataRefresh) {
+    const diffSec = Math.floor((Date.now() - state.lastDataRefresh.getTime()) / 1000);
+    let updatedText;
+    if (diffSec < 30) updatedText = 'just now';
+    else if (diffSec < 60) updatedText = `${diffSec}s ago`;
+    else if (diffSec < 3600) updatedText = `${Math.floor(diffSec/60)} min ago`;
+    else updatedText = `${Math.floor(diffSec/3600)} h ago`;
+    document.getElementById('last-updated').textContent = `Last updated: ${updatedText}`;
+  }
+  if (CONFIG.DEMO_TIME_OVERRIDE) document.getElementById('demo-flag').style.display = 'inline';
+
+  if (state.fixedView === 'status' || (state.fixedView === null && state.activeTab === 'status')) {
+    const todayRows = state.status.filter(r => !r.Date || r.Date === TODAY_ISO);
+    const onShift = todayRows.filter(r => r.Shift).length;
+    const out     = todayRows.filter(r => !r.Shift).length;
+    const total   = todayRows.length;
+    document.getElementById('stat-line').innerHTML = `
+      <span class="stat-label">Status</span>
+      <span class="stat-sep">|</span>
+      <span class="stat-num">${onShift}</span> <span class="stat-suffix">On Shift</span>
+      <span class="stat-sep">|</span>
+      <span class="stat-num">${out}</span> <span class="stat-suffix">Out</span>
+      <span class="stat-sep">|</span>
+      <span class="stat-num">${total}</span> <span class="stat-suffix">Total</span>
+    `;
+  } else {
+    const total = isAfterEndOfDay() ? 0 : state.meetings.length;
+    const done  = state.meetings.filter(m => m.Attended).length;
+    const unalloc = state.meetings.filter(m => !m.AllocatedTo).length;
+    document.getElementById('stat-line').innerHTML = `
+      <span class="stat-label">Meetings</span>
+      <span class="stat-sep">|</span>
+      <span class="stat-num">${total}</span> <span class="stat-suffix">Today</span>
+      <span class="stat-sep">|</span>
+      <span class="stat-num">${done}</span> <span class="stat-suffix">Done</span>
+      <span class="stat-sep">|</span>
+      <span class="stat-num">${unalloc}</span> <span class="stat-suffix">Unallocated</span>
+    `;
+  }
+}
+
+function setActiveTab(tab) {
+  state.activeTab = tab;
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.getElementById('board-meetings').classList.toggle('active', tab === 'meetings');
+  document.getElementById('board-status').classList.toggle('active',  tab === 'status');
+  renderHeader();
+}
+function applyURLView() {
+  const params = new URLSearchParams(location.search);
+  const view = params.get('view');
+  if (view === 'meetings' || view === 'status') {
+    state.fixedView = view; state.mode = 'wall';
+    document.body.dataset.mode = 'wall';
+    document.getElementById('board-meetings').classList.toggle('active', view === 'meetings');
+    document.getElementById('board-status').classList.toggle('active',  view === 'status');
+  } else {
+    state.fixedView = null; state.mode = 'tabbed';
+    document.body.dataset.mode = 'tabbed';
+    setActiveTab('meetings');
+  }
+}
+
+function applyURLTheme() {
+  const params = new URLSearchParams(location.search);
+  const theme = params.get('theme') === 'light' ? 'light' : 'dark';
+  setTheme(theme, false);
+}
+
+function setTheme(theme, updateURL) {
+  document.body.classList.remove('theme-dark', 'theme-light');
+  document.body.classList.add('theme-' + theme);
+  // Toggle button shows the icon for the theme you'd switch TO
+  const icon = theme === 'dark' ? 'sun' : 'moon';
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.innerHTML = svgIcon(icon, 16);
+  if (updateURL) {
+    try {
+      const url = new URL(location.href);
+      url.searchParams.set('theme', theme);
+      history.replaceState(null, '', url);
+    } catch (e) {
+      // Sandboxed contexts (e.g. about:srcdoc inside iframes) block replaceState.
+      // Theme switch still works for the session; URL persistence just isn't possible here.
+    }
+  }
+}
+
+function toggleTheme() {
+  const isLight = document.body.classList.contains('theme-light');
+  setTheme(isLight ? 'dark' : 'light', true);
+}
+function escapeHTML(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+async function dataRefresh() { await loadData(); renderStatus(); renderMeetings(); renderHeader(); }
+function stateRefresh() { renderMeetings(); renderHeader(); }
+function clockTick() { renderHeader(); }
+
+async function init() {
+  applyURLTheme();
+  applyURLView();
+  document.getElementById('tab-meetings').innerHTML = svgIcon('calendar-clock', 16) + ' Meetings';
+  document.getElementById('tab-status').innerHTML   = svgIcon('users', 16) + ' Status';
+  document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+  document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => setActiveTab(b.dataset.tab)));
+  await dataRefresh();
+  setInterval(clockTick,    1000);
+  setInterval(stateRefresh, CONFIG.STATE_REFRESH_MS);
+  setInterval(dataRefresh,  CONFIG.DATA_REFRESH_MS);
+}
+window.addEventListener('DOMContentLoaded', init);
+
+// Simulator control: accept tab/theme commands via postMessage
+window.addEventListener('message', (e) => {
+  if (!e.data || typeof e.data !== 'object') return;
+  if (e.data.tab)   setActiveTab(e.data.tab);
+  if (e.data.theme) setTheme(e.data.theme, false);
+});
+</script>
+</body>
+</html>
