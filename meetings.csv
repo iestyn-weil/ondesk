@@ -1,7 +1,8 @@
-Start,End,Room,Host,Title,Requirements,ZoomDetails,AllocatedTo,Attended
-08:30,09:30,CR - 8.06,Sarah Bennett,Practice Group Session (Part 1),Zoom Recording · Zoom Video,Zoom Meeting ID: 847 5743 8820  P/code: 632717,Alex,TRUE
-10:00,11:00,CR - 8.05,Michael Grant,Marketing Team Review,Laptop - Guest,"Marketing team — bringing own laptop, will need a screen",Riley,FALSE
-11:00,12:00,CR - 8.04,Emma Collins,Q2 Partner Briefing,Zoom Video · Zoom Recording,Zoom Meeting ID: 921 4455 1102  P/code: 884271,Drew,FALSE
-12:30,13:30,CR - 7.02,David Marsh,Lunch & Learn - AI Use Cases,Zoom Video · Catering AV,Zoom Meeting ID: 555 1234 5678  P/code: 191919,Casey,FALSE
-14:00,15:00,CR - 8.06,Olivia Hart,Vendor Demo - Litigation Tools,Laptop - Guest · Zoom Recording,Zoom Meeting ID: 712 9988 4411  P/code: 472938,Riley,FALSE
-16:00,17:00,CR - 8.05,Daniel Webb,Internal Comms - All-Hands Prep,Zoom Video,Zoom Meeting ID: 308 4521 9876  P/code: 552233,,FALSE
+StartTime(SubOrder),Title,Host,Meeting Type,Attendees,Booking No.,Start,End,Room,Task Type,Facility,Facilities Comments,Team,Order No.,Booking Comments
+"Monday, June 1 2026 08:00",,Sarah Bennett,,,,08:00,08:45,,Early Client Briefing - CONFIRMED,CR - 8.06,,Meeting Services,9001.00,Early client briefing<BR>Zoom Meeting ID: 111 2222 3333  P/code: 123456
+"Monday, June 1 2026 08:00",Early Client Briefing - CONFIRMED,Sarah Bennett,Client Meeting,10,9001.00,08:00,08:45,CR - 8.06,Early Client Briefing - CONFIRMED,Zoom - Video,,AV / Office Equipment,9001.01,Early client briefing<BR>Zoom Meeting ID: 111 2222 3333  P/code: 123456
+"Monday, June 1 2026 08:00",Early Client Briefing - CONFIRMED,Sarah Bennett,Client Meeting,10,9001.00,08:00,08:45,CR - 8.06,Early Client Briefing - CONFIRMED,Laptop - Guest,,AV / Office Equipment,9001.02,Early client briefing<BR>Zoom Meeting ID: 111 2222 3333  P/code: 123456
+"Monday, June 1 2026 10:00",,Michael Grant,,,,10:00,11:00,,Marketing Team Review - CONFIRMED,CR - 8.05,,Meeting Services,9002.00,Internal team review<BR>Presenter bringing own laptop; screen required
+"Monday, June 1 2026 10:00",Marketing Team Review - CONFIRMED,Michael Grant,Training,8,9002.00,10:00,11:00,CR - 8.05,Marketing Team Review - CONFIRMED,Laptop - Guest,,AV / Office Equipment,9002.01,Internal team review<BR>Presenter bringing own laptop; screen required
+"Monday, June 1 2026 11:00",Partner Briefing - CONFIRMED,Emma Collins,Client Meeting,14,9003.00,11:00,12:00,CR - 8.04,Partner Briefing - CONFIRMED,Zoom - Recording,,AV / Office Equipment,9003.01,Partner briefing<BR>Zoom Meeting ID: 444 5555 6666  P/code: 654321
+"Monday, June 1 2026 11:00",Partner Briefing - CONFIRMED,Emma Collins,Client Meeting,14,9003.00,11:00,12:00,CR - 8.04,Partner Briefing - CONFIRMED,Zoom - Video,,AV / Office Equipment,9003.02,Partner briefing<BR>Zoom Meeting ID: 444 5555 6666  P/code: 654321
