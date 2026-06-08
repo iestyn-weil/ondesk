@@ -134,7 +134,7 @@ function svgIcon(name,size){const p=ICONS[name]||ICONS.tag;const s=size||14;retu
 
 const CONFIG = {
   PID: 'CL-9655-260515-M7QK',
-  VERSION: '0.8.3',
+  VERSION: '0.8.4',
   USE_TEST_DATA: false,
   DEMO_TIME_OVERRIDE: '2026-06-01T11:30:00',
   DATA_REFRESH_MS: 5 * 60 * 1000,
@@ -149,8 +149,8 @@ const CONFIG = {
   TEAMS: {
     ENABLED: false,
     WEBHOOK_URL: '',
-    POST_MODE: 'cors', // GitHub-hosted direct test: sends application/json; will fail if Power Automate blocks browser CORS
-    PAYLOAD_MODE: 'raw-json', // Custom OnDesk PA flow expects top-level OnDesk fields plus text
+    POST_MODE: 'no-cors', // GitHub-hosted direct test: simple fire-and-forget POST to avoid browser CORS/preflight
+    PAYLOAD_MODE: 'raw-json', // Custom OnDesk PA flow expects top-level OnDesk fields plus text; flow Body expression should be json(string(triggerBody()))
     SEND_MODE: 'manual', // 'manual' shows Send button; 'auto' sends once per alert key
     DEMO_MENTION_DISPLAY: 'Iestyn McBratney',
     DEMO_MENTION_UPN: '',
@@ -246,7 +246,13 @@ window.OnDeskTeams = {
   async testSimple(){
     const configured=await ensureTeamsConfigured(true);
     if(!configured) throw new Error('Teams webhook is not configured.');
-    const payload={text:`OnDesk GitHub direct test · PID ${CONFIG.PID} · v${CONFIG.VERSION} · ${new Date().toISOString()}`};
+    const payload={source:'OnDesk', pid:CONFIG.PID, version:CONFIG.VERSION, text:`OnDesk GitHub no-cors test · PID ${CONFIG.PID} · v${CONFIG.VERSION} · ${new Date().toISOString()}`, alertType:'DEMO_TEST', severity:'medium', meetingId:'DEMO-TEST', bookingNo:'DEMO-TEST', start:'11:30', end:'11:45', room:'DEV', host:'OnDesk demo', title:'Webhook test', requirements:'Teams notification test', allocatedTo:'Demo user', currentStage:'allocated', currentStageLabel:'Allocated', requiredStage:'Demo', dueTime:'11:30', isClientFloor:false, hasZoomDetails:false, mentionDisplayName:CONFIG.TEAMS.DEMO_MENTION_DISPLAY, mentionUpn:CONFIG.TEAMS.DEMO_MENTION_UPN, createdAtUtc:new Date().toISOString()};
+    if(CONFIG.TEAMS.POST_MODE === 'no-cors'){
+      await fetch(CONFIG.TEAMS.WEBHOOK_URL,{method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=UTF-8'}, body:JSON.stringify(payload)});
+      const result={ok:null,status:'opaque/no-cors',body:'Browser cannot verify delivery. Check Power Automate run history and Teams channel.'};
+      console.log('OnDeskTeams.testSimple result', result);
+      return result;
+    }
     const res=await fetch(CONFIG.TEAMS.WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const body=await res.text().catch(()=> '');
     const result={ok:res.ok,status:res.status,body};
